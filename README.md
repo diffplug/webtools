@@ -8,9 +8,8 @@
 ```gradle
 apply plugin: 'com.diffplug.webtools.node'
 node {
-  // looks for a `.nvmrc` in this folder or its parent
-  // downloads the corresponding version of node
-  // `npm ci`
+  // looks for an `.nvmrc` in this folder or its parent
+  // downloads the corresponding version of node `npm ci`
 
   // and then it will run `npm run blah` like so
   npm_run 'blah', {
@@ -24,7 +23,8 @@ node {
 ## Static Server
 
 ```gradle
-tasks.register('serve', com.diffplug.webtools.internal.StaticServerTask) {
+tasks.register('serve', com.diffplug.webtools.serve.StaticServerTask) {
   dir = file('build/static')
+  port = 8080 // by default
 }
 ```
