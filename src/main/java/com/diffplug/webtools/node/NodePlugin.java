@@ -16,6 +16,10 @@
 package com.diffplug.webtools.node;
 
 import com.github.eirslett.maven.plugins.frontend.lib.ProxyConfig;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Objects;
 import org.gradle.api.Action;
@@ -46,12 +50,18 @@ public class NodePlugin implements Plugin<Project> {
 
 		public Extension(Project project) {
 			this.project = Objects.requireNonNull(project);
-
 		}
 
 		public TaskProvider<?> npm_run(String name, Action<Task> taskConfig) {
 			return project.getTasks().register("npm_run_" + name, NpmRunTask.class, task -> {
 				task.taskName = name;
+				try {
+					setup.nodeVersion = nvmRc(findNvmRc(project.getProjectDir()));
+					setup.npmVersion = "provided";
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+
 				task.getSetup().set(setup);
 				task.getProjectDir().set(project.getProjectDir());
 				task.getInputs().file("package-lock.json").withPathSensitivity(PathSensitivity.RELATIVE);
@@ -91,8 +101,23 @@ public class NodePlugin implements Plugin<Project> {
 
 	@Override
 	public void apply(Project project) {
-		extension = project.getExtensions().create(EXTENSION_NAME, Extension.class, project);
+		project.getExtensions().create(EXTENSION_NAME, Extension.class, project);
 	}
 
-	private Extension extension;
+	private static String nvmRc(File file) throws IOException {
+		String str = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
+		return "v" + str;
+	}
+
+	private static File findNvmRc(File projectDir) {
+		File nvmRc = new File(projectDir, ".nvmrc");
+		if (nvmRc.exists()) {
+			return nvmRc;
+		}
+		nvmRc = new File(projectDir.getParentFile(), ".nvmrc");
+		if (nvmRc.exists()) {
+			return nvmRc;
+		}
+		throw new IllegalArgumentException("Could not find .nvmrc in " + projectDir + " or its parent.");
+	}
 }
