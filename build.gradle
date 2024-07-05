@@ -13,6 +13,8 @@ apply from: 干.file('base/maven.gradle')
 apply from: 干.file('base/sonatype.gradle')
 
 dependencies {
+	// node.js
+	api 'com.github.eirslett:frontend-maven-plugin:1.15.0' // JitPack HEAD as of 04/23/2020
 	// static file server
 	String VER_JETTY = '11.0.20'
 	api "org.eclipse.jetty:jetty-server:$VER_JETTY"
