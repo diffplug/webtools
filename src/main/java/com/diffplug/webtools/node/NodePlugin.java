@@ -42,12 +42,12 @@ public class NodePlugin implements Plugin<Project> {
 
 	public static class Extension {
 		private final Project project;
+		private final SetupCleanupNode setup = new SetupCleanupNode();
 
 		public Extension(Project project) {
 			this.project = Objects.requireNonNull(project);
-		}
 
-		public final SetupCleanupNode setup = new SetupCleanupNode();
+		}
 
 		public TaskProvider<?> npm_run(String name, Action<Task> taskConfig) {
 			return project.getTasks().register("npm_run_" + name, NpmRunTask.class, task -> {

@@ -20,11 +20,30 @@ import com.github.eirslett.maven.plugins.frontend.lib.InstallationException;
 import com.github.eirslett.maven.plugins.frontend.lib.ProxyConfig;
 import com.github.eirslett.maven.plugins.frontend.lib.TaskRunnerException;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 
 class SetupCleanupNode implements Serializable {
+	private static String nvmRc(File file) throws IOException {
+		String str = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
+		return "v" + str;
+	}
+
+	private static File findNvmRc(File projectDir) {
+		File nvmRc = new File(projectDir, ".nvmrc");
+		if (nvmRc.exists()) {
+			return nvmRc;
+		}
+		nvmRc = new File(projectDir.getParentFile(), ".nvmrc");
+		if (nvmRc.exists()) {
+			return nvmRc;
+		}
+		throw new IllegalArgumentException("Could not find .nvmrc in " + projectDir + " or its parent.");
+	}
+
 	public String nodeVersion;
 	public String npmVersion;
 	private File workingDir, installDir;
@@ -32,6 +51,8 @@ class SetupCleanupNode implements Serializable {
 	private byte[] packageLockJson;
 
 	public void start(File projectDir) throws Exception {
+		nodeVersion = nvmRc(findNvmRc(projectDir));
+		npmVersion = "provided";
 		workingDir = projectDir;
 		installDir = new File(projectDir, "build/node-install");
 		packageLockJson = Files.readAllBytes(workingDir.toPath().resolve("package-lock.json"));
