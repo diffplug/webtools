@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+
+## [1.1.0] - 2024-08-04
 ### Added
 - Make it possible to set environment variables for npm run tasks. ([#2](https://github.com/diffplug/webtools/pull/2))
 
