@@ -22,11 +22,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.TreeMap;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
@@ -52,7 +52,7 @@ public class NodePlugin implements Plugin<Project> {
 			this.project = Objects.requireNonNull(project);
 		}
 
-		public TaskProvider<?> npm_run(String name, Action<Task> taskConfig) {
+		public TaskProvider<?> npm_run(String name, Action<NpmRunTask> taskConfig) {
 			return project.getTasks().register("npm_run_" + name, NpmRunTask.class, task -> {
 				task.taskName = name;
 				try {
@@ -76,10 +76,16 @@ public class NodePlugin implements Plugin<Project> {
 	@CacheableTask
 	public abstract static class NpmRunTask extends DefaultTask {
 		public String taskName;
+		private TreeMap<String, String> environment = new TreeMap<>();
 
 		@Input
 		public String getTaskName() {
 			return taskName;
+		}
+
+		@Input
+		public TreeMap<String, String> getEnvironment() {
+			return environment;
 		}
 
 		@Internal
@@ -95,7 +101,7 @@ public class NodePlugin implements Plugin<Project> {
 			setup.start(getProjectDir().get().getAsFile());
 			// run the gulp task
 			ProxyConfig proxyConfig = new ProxyConfig(Collections.emptyList());
-			setup.factory().getNpmRunner(proxyConfig, null).execute("run " + taskName, null);
+			setup.factory().getNpmRunner(proxyConfig, null).execute("run " + taskName, environment);
 		}
 	}
 
