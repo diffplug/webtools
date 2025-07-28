@@ -15,18 +15,19 @@
  */
 package com.diffplug.webtools.node;
 
-import com.github.eirslett.maven.plugins.frontend.lib.ProxyConfig;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
-import org.gradle.api.Action;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
+import java.util.concurrent.CompletableFuture;
+import org.gradle.api.*;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
@@ -94,14 +95,66 @@ public class NodePlugin implements Plugin<Project> {
 		@Internal
 		public abstract DirectoryProperty getProjectDir();
 
+		private static CompletableFuture<Void> readStream(InputStream inputStream, List<String> outputLines, String streamName) {
+			return CompletableFuture.runAsync(() -> {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+					String line;
+					while ((line = reader.readLine()) != null) {
+						synchronized (outputLines) {
+							outputLines.add(line);
+						}
+					}
+				} catch (IOException e) {
+					synchronized (outputLines) {
+						outputLines.add("Error reading " + streamName + ": " + e.getMessage());
+					}
+				}
+			});
+		}
+
 		@TaskAction
 		public void npmCiRunTask() throws Exception {
 			SetupCleanupNode setup = getSetup().get();
+			File projectDir = getProjectDir().get().getAsFile();
 			// install node, npm, and package-lock.json
-			setup.start(getProjectDir().get().getAsFile());
-			// run the gulp task
-			ProxyConfig proxyConfig = new ProxyConfig(Collections.emptyList());
-			setup.factory().getNpmRunner(proxyConfig, null).execute("run " + npmTaskName, environment);
+			setup.start(projectDir);
+
+			// Use ProcessBuilder for direct console output instead of NpmRunner
+			File installDir = new File(projectDir, "build/node-install");
+			File npmExe;
+			if (System.getProperty("os.name").toLowerCase().contains("win")) {
+				npmExe = new File(installDir, "node/npm.cmd");
+			} else {
+				npmExe = new File(installDir, "node/npm");
+			}
+
+			ProcessBuilder processBuilder = new ProcessBuilder(npmExe.getAbsolutePath(), "run", npmTaskName);
+			processBuilder.directory(projectDir);
+			processBuilder.environment().putAll(environment);
+			Process process = processBuilder.start();
+
+			// Buffer output to only show on failure
+			List<String> stdoutLines = new ArrayList<>();
+			List<String> stderrLines = new ArrayList<>();
+
+			// Create threads to read stdout and stderr concurrently
+			CompletableFuture<Void> stdoutFuture = readStream(process.getInputStream(), stdoutLines, "stdout");
+			CompletableFuture<Void> stderrFuture = readStream(process.getErrorStream(), stderrLines, "stderr");
+			int exitCode = process.waitFor();
+			CompletableFuture.allOf(stdoutFuture, stderrFuture).join();
+			if (exitCode == 0) {
+				return;
+			}
+
+			var cmd = new StringBuilder().append("> npm run ").append(npmTaskName).append(" FAILED\n");
+			environment.forEach((key, value) -> cmd.append("  env ").append(key).append("=").append(value).append("\n"));
+			for (String line : stdoutLines) {
+				cmd.append(line).append("\n");
+			}
+			for (String line : stderrLines) {
+				cmd.append(line).append("\n");
+			}
+			throw new GradleException(cmd.toString());
 		}
 	}
 
