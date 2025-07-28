@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 DiffPlug
+ * Copyright (C) 2024-2025 DiffPlug
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,8 @@ public class NodePlugin implements Plugin<Project> {
 		}
 
 		public TaskProvider<?> npm_run(String name, Action<NpmRunTask> taskConfig) {
-			return project.getTasks().register("npm_run_" + name, NpmRunTask.class, task -> {
-				task.taskName = name;
+			return project.getTasks().register("npm_run_" + name.replace(':', '-'), NpmRunTask.class, task -> {
+				task.npmTaskName = name;
 				try {
 					setup.nodeVersion = nvmRc(findNvmRc(project.getProjectDir()));
 					setup.npmVersion = "provided";
@@ -75,12 +75,12 @@ public class NodePlugin implements Plugin<Project> {
 
 	@CacheableTask
 	public abstract static class NpmRunTask extends DefaultTask {
-		public String taskName;
+		public String npmTaskName;
 		private TreeMap<String, String> environment = new TreeMap<>();
 
 		@Input
-		public String getTaskName() {
-			return taskName;
+		public String getNpmTaskName() {
+			return npmTaskName;
 		}
 
 		@Input
@@ -101,7 +101,7 @@ public class NodePlugin implements Plugin<Project> {
 			setup.start(getProjectDir().get().getAsFile());
 			// run the gulp task
 			ProxyConfig proxyConfig = new ProxyConfig(Collections.emptyList());
-			setup.factory().getNpmRunner(proxyConfig, null).execute("run " + taskName, environment);
+			setup.factory().getNpmRunner(proxyConfig, null).execute("run " + npmTaskName, environment);
 		}
 	}
 

@@ -17,6 +17,8 @@ node {
     inputs.dir('somedir').withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir('build/some-output')
   }
+  // if an npm script contains `:` it willbe transformed into `-`
+  npm_run 'lint:fix', {} // becomes `npm_run_lint-fix`
 }
 ```
 
