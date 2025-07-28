@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+### Added
+- Task like `npm run lint:fix` get turned into `npm_run_lint-fix` (so the colons don't screw up Gradle)
 
 ## [1.1.0] - 2024-08-04
 ### Added
