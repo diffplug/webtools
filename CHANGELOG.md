@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+
+## [1.2.0] - 2025-07-28
 ### Added
 - Task like `npm run lint:fix` get turned into `npm_run_lint-fix` (so the colons don't screw up Gradle)
 - When `npm run` commands fail, they dump their console output as a Gradle error.
