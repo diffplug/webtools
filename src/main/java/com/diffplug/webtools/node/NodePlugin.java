@@ -16,13 +16,18 @@
 package com.diffplug.webtools.node;
 
 import com.github.eirslett.maven.plugins.frontend.lib.ProxyConfig;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
@@ -97,11 +102,122 @@ public class NodePlugin implements Plugin<Project> {
 		@TaskAction
 		public void npmCiRunTask() throws Exception {
 			SetupCleanupNode setup = getSetup().get();
+			File projectDir = getProjectDir().get().getAsFile();
+			
+			System.out.println("=== NPM Task: " + npmTaskName + " ===");
+			System.out.println("Installing Node.js dependencies...");
+			
 			// install node, npm, and package-lock.json
-			setup.start(getProjectDir().get().getAsFile());
-			// run the gulp task
-			ProxyConfig proxyConfig = new ProxyConfig(Collections.emptyList());
-			setup.factory().getNpmRunner(proxyConfig, null).execute("run " + npmTaskName, environment);
+			setup.start(projectDir);
+			
+			System.out.println("Running: npm run " + npmTaskName);
+			if (!environment.isEmpty()) {
+				System.out.println("Environment variables:");
+				environment.forEach((key, value) -> System.out.println("  " + key + "=" + value));
+			}
+			System.out.println();
+			
+			try {
+				// Use ProcessBuilder for direct console output instead of NpmRunner
+				File installDir = new File(projectDir, "build/node-install");
+				File npmExe;
+				
+				// Based on frontend-maven-plugin structure, npm is directly in the node directory
+				File nodeExe = new File(installDir, "node/node");
+				if (System.getProperty("os.name").toLowerCase().contains("win")) {
+					nodeExe = new File(installDir, "node/node.exe");
+					npmExe = new File(installDir, "node/npm.cmd");
+				} else {
+					npmExe = new File(installDir, "node/npm");
+				}
+				
+				System.out.println("Using node executable: " + nodeExe.getAbsolutePath());
+				System.out.println("Node executable exists: " + nodeExe.exists());
+				System.out.println("Using npm executable: " + npmExe.getAbsolutePath());
+				System.out.println("NPM executable exists: " + npmExe.exists());
+				
+				ProcessBuilder processBuilder = new ProcessBuilder(npmExe.getAbsolutePath(), "run", npmTaskName);
+				
+				processBuilder.directory(projectDir);
+				processBuilder.environment().putAll(environment);
+				
+				Process process = processBuilder.start();
+				
+				// Buffer output to only show on failure
+				List<String> stdoutLines = new ArrayList<>();
+				List<String> stderrLines = new ArrayList<>();
+				
+				// Create threads to read stdout and stderr concurrently
+				CompletableFuture<Void> stdoutFuture = CompletableFuture.runAsync(() -> {
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+						String line;
+						while ((line = reader.readLine()) != null) {
+							synchronized (stdoutLines) {
+								stdoutLines.add(line);
+							}
+						}
+					} catch (IOException e) {
+						synchronized (stdoutLines) {
+							stdoutLines.add("Error reading stdout: " + e.getMessage());
+						}
+					}
+				});
+				
+				CompletableFuture<Void> stderrFuture = CompletableFuture.runAsync(() -> {
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+						String line;
+						while ((line = reader.readLine()) != null) {
+							synchronized (stderrLines) {
+								stderrLines.add(line);
+							}
+						}
+					} catch (IOException e) {
+						synchronized (stderrLines) {
+							stderrLines.add("Error reading stderr: " + e.getMessage());
+						}
+					}
+				});
+				
+				int exitCode = process.waitFor();
+				
+				// Wait for output streams to finish
+				CompletableFuture.allOf(stdoutFuture, stderrFuture).join();
+				
+				System.out.println();
+				if (exitCode == 0) {
+					System.out.println("✓ NPM task '" + npmTaskName + "' completed successfully");
+				} else {
+					System.out.println("✗ NPM task '" + npmTaskName + "' failed with exit code " + exitCode);
+					System.out.println();
+					System.out.println("=== NPM OUTPUT ===");
+					
+					// Print stdout if there's any
+					if (!stdoutLines.isEmpty()) {
+						System.out.println("STDOUT:");
+						for (String line : stdoutLines) {
+							System.out.println(line);
+						}
+						System.out.println();
+					}
+					
+					// Print stderr if there's any
+					if (!stderrLines.isEmpty()) {
+						System.out.println("STDERR:");
+						for (String line : stderrLines) {
+							System.out.println(line);
+						}
+					}
+					
+					System.out.println("==================");
+					throw new RuntimeException("npm run " + npmTaskName + " failed with exit code " + exitCode);
+				}
+			} catch (Exception e) {
+				System.out.println();
+				System.out.println("✗ NPM task '" + npmTaskName + "' failed");
+				System.out.println("Command: npm run " + npmTaskName);
+				System.out.println("Error: " + e.getMessage());
+				throw e;
+			}
 		}
 	}
 
