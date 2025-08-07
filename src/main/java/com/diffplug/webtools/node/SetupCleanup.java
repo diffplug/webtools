@@ -26,23 +26,25 @@ import java.util.Arrays;
 
 abstract class SetupCleanup<K> {
 	public void start(File keyFile, K key) throws Exception {
-		byte[] required = toBytes(key);
-		if (keyFile.exists()) {
-			byte[] actual = Files.readAllBytes(keyFile.toPath());
-			if (Arrays.equals(actual, required)) {
-				// short-circuit if our state is already setup
-				return;
-			} else {
-				Files.delete(keyFile.toPath());
-				@SuppressWarnings("unchecked")
-				K lastKey = (K) fromBytes(required);
-				doStop(lastKey);
+		synchronized (key.getClass()) {
+			byte[] required = toBytes(key);
+			if (keyFile.exists()) {
+				byte[] actual = Files.readAllBytes(keyFile.toPath());
+				if (Arrays.equals(actual, required)) {
+					// short-circuit if our state is already setup
+					return;
+				} else {
+					Files.delete(keyFile.toPath());
+					@SuppressWarnings("unchecked")
+					K lastKey = (K) fromBytes(required);
+					doStop(lastKey);
+				}
 			}
+			// write out the key
+			doStart(key);
+			Files.createDirectories(keyFile.toPath().getParent());
+			Files.write(keyFile.toPath(), required);
 		}
-		// write out the key
-		doStart(key);
-		Files.createDirectories(keyFile.toPath().getParent());
-		Files.write(keyFile.toPath(), required);
 	}
 
 	protected abstract void doStart(K key) throws Exception;
