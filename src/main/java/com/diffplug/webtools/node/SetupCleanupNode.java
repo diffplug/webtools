@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 
 class SetupCleanupNode implements Serializable {
@@ -61,7 +62,8 @@ class SetupCleanupNode implements Serializable {
 				// copy npm.cmd as a windows workaround
 				try {
 					Files.copy(key.installDir.toPath().resolve("node/node_modules/npm/bin/npm.cmd"),
-							key.installDir.toPath().resolve("node/npm.cmd"));
+							key.installDir.toPath().resolve("node/npm.cmd"),
+							StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}

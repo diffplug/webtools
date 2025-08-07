@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+### Fixed
+- The workaround worked on clean builds, but tried to copy-over-existing on not-clean-builds. Fixed now.
 
 ## [1.2.1] - 2025-08-07
 ### Fixed
