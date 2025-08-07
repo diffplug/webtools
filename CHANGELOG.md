@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+### Fixed
+- Fixup some requirements for Gradle 9.
 
 ## [1.2.2] - 2025-08-07
 ### Fixed
