@@ -15,11 +15,13 @@
  */
 package com.diffplug.webtools.node;
 
+import com.diffplug.common.swt.os.OS;
 import com.github.eirslett.maven.plugins.frontend.lib.FrontendPluginFactory;
 import com.github.eirslett.maven.plugins.frontend.lib.InstallationException;
 import com.github.eirslett.maven.plugins.frontend.lib.ProxyConfig;
 import com.github.eirslett.maven.plugins.frontend.lib.TaskRunnerException;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.Collections;
@@ -55,6 +57,15 @@ class SetupCleanupNode implements Serializable {
 					.setNodeVersion(key.nodeVersion)
 					.setNpmVersion(key.npmVersion)
 					.install();
+			if (OS.getNative().isWindows()) {
+				// copy npm.cmd as a windows workaround
+				try {
+					Files.copy(key.installDir.toPath().resolve("node/node_modules/npm/bin/npm.cmd"),
+							key.installDir.toPath().resolve("node/npm.cmd"));
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
 			factory.getNpmRunner(proxyConfig, null)
 					.execute("ci", null);
 		}
