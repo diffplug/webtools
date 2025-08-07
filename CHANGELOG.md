@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+
+## [1.2.1] - 2025-08-07
 ### Fixed
 - Workaround for a Windows issue afflicting modern node versions.
   - Cannot run program "...\build\node-install\node\npm.cmd" ...: CreateProcess error=2, The system cannot find the file specifie
