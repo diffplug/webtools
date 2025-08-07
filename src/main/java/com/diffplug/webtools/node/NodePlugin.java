@@ -30,12 +30,12 @@ import java.util.concurrent.CompletableFuture;
 import org.gradle.api.*;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.work.DisableCachingByDefault;
 
 /**
  * Installs a specific version of node.js and npm,
@@ -74,7 +74,7 @@ public class NodePlugin implements Plugin<Project> {
 		}
 	}
 
-	@CacheableTask
+	@DisableCachingByDefault(because = "Runs external 'npm run' and produces undeclared outputs; not safely cacheable")
 	public abstract static class NpmRunTask extends DefaultTask {
 		public String npmTaskName;
 		private TreeMap<String, String> environment = new TreeMap<>();

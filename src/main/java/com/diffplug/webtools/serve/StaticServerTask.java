@@ -27,8 +27,10 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
 /** Serves a collection of folders using URLs. */
+@DisableCachingByDefault(because = "Dev server task; long-running with no reproducible outputs")
 public class StaticServerTask extends DefaultTask {
 	private int port = 8080;
 
