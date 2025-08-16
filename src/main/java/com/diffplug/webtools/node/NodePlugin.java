@@ -130,6 +130,8 @@ public class NodePlugin implements Plugin<Project> {
 
 			ProcessBuilder processBuilder = new ProcessBuilder(npmExe.getAbsolutePath(), "run", npmTaskName);
 			processBuilder.directory(projectDir);
+
+			addNodeToPath(processBuilder, installDir);
 			processBuilder.environment().putAll(environment);
 			Process process = processBuilder.start();
 
@@ -161,6 +163,19 @@ public class NodePlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
 		project.getExtensions().create(EXTENSION_NAME, Extension.class, project);
+	}
+
+	private static void addNodeToPath(ProcessBuilder processBuilder, File installDir) {
+		// Add node binary directory to PATH for npm to find node executable
+		File nodeDir = new File(installDir, "node");
+		String currentPath = processBuilder.environment().get("PATH");
+		if (currentPath == null) {
+			currentPath = processBuilder.environment().get("Path"); // Windows
+		}
+		String nodeBinPath = nodeDir.getAbsolutePath();
+		String pathSeparator = System.getProperty("path.separator");
+		String newPath = nodeBinPath + pathSeparator + (currentPath != null ? currentPath : "");
+		processBuilder.environment().put("PATH", newPath);
 	}
 
 	private static String nvmRc(File file) throws IOException {

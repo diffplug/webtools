@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+### Fixed
+- Add the node installation dir onto `PATH` to try to fix a Heroku issue.
 
 ## [1.2.3] - 2025-08-07
 ### Fixed
