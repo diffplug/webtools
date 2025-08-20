@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+
+## [1.2.5] - 2025-08-20
 ### Fixed
 - All the fixes we have done for `npm run blah` are now backported to `npm ci` also.
 
