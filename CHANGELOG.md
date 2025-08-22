@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+
+## [1.2.6] - 2025-08-22
 ### Fixed
 - Tasks which declare outputs are now automatically cached.
 
