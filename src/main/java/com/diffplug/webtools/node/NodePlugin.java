@@ -61,16 +61,18 @@ public class NodePlugin implements Plugin<Project> {
 
 				task.getSetup().set(setup);
 				task.getProjectDir().set(project.getProjectDir());
+				task.getInputs().file("package.json").withPathSensitivity(PathSensitivity.RELATIVE);
 				task.getInputs().file("package-lock.json").withPathSensitivity(PathSensitivity.RELATIVE);
 
 				task.getInputs().property("nodeVersion", setup.nodeVersion);
 				task.getInputs().property("npmVersion", setup.npmVersion);
 				taskConfig.execute(task);
+				task.getOutputs().cacheIf(spec -> !task.getOutputs().getFiles().isEmpty());
 			});
 		}
 	}
 
-	@DisableCachingByDefault(because = "Runs external 'npm run' and produces undeclared outputs; not safely cacheable")
+	@DisableCachingByDefault(because = "Add `outputs.[dir|file](...)` (and necessary inputs) in the configuration block to enable caching.")
 	public abstract static class NpmRunTask extends DefaultTask {
 		public String npmTaskName;
 		private TreeMap<String, String> environment = new TreeMap<>();
