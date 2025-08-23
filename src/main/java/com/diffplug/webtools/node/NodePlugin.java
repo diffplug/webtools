@@ -50,13 +50,13 @@ public class NodePlugin implements Plugin<Project> {
 			this.project = Objects.requireNonNull(project);
 		}
 
-        public boolean envIsHerokuBuild() {
-            return Env.isHerokuBuild();
-        }
+		public boolean envIsHerokuBuild() {
+			return Env.isHerokuBuild();
+		}
 
-        public boolean envIsGitHubAction() {
-            return Env.isGitHubAction();
-        }
+		public boolean envIsGitHubAction() {
+			return Env.isGitHubAction();
+		}
 
 		public TaskProvider<?> npm_run(String name, Action<NpmRunTask> taskConfig) {
 			return project.getTasks().register("npm_run_" + name.replace(':', '-'), NpmRunTask.class, task -> {
