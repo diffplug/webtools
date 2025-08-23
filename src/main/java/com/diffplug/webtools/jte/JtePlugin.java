@@ -15,6 +15,7 @@
  */
 package com.diffplug.webtools.jte;
 
+import static org.joor.Reflect.on;
 import static org.joor.Reflect.onClass;
 
 import gg.jte.ContentType;
@@ -51,21 +52,22 @@ public class JtePlugin implements Plugin<Project> {
 	public void apply(Project project) {
 		project.getPlugins().apply("gg.jte.gradle");
 		project.getPlugins().apply("org.jetbrains.kotlin.jvm");
-		gg.jte.gradle.JteExtension extension = (gg.jte.gradle.JteExtension) project.getExtensions().getByType(onClass("gg.jte.gradle.JteExtension").type());
+		var extension = on(project.getExtensions().getByType(onClass("gg.jte.gradle.JteExtension").type()));
 
 		JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
 		SourceSet main = javaPluginExtension.getSourceSets().findByName("main");
 
 		project.getTasks().named("classes").configure(task -> {
-			task.getInputs().dir(extension.getSourceDirectory());
+			task.getInputs().dir(extension.call("getSourceDirectory"));
 		});
+
 		var jteModelsTask = project.getTasks().register("jteModels", RenderModelClasses.class, task -> {
 			var jteModels = new File(project.getLayout().getBuildDirectory().getAsFile().get(), "jte-models");
 			main.getJava().srcDir(jteModels);
 			task.getOutputDir().set(jteModels);
-			task.getInputDir().set(extension.getSourceDirectory().get().toFile());
-			task.getPackageName().set(extension.getPackageName());
-			task.getContentType().set(extension.getContentType());
+			task.getInputDir().set((File) extension.call("getSourceDirectory").call("get").call("toFile").get());
+			task.getPackageName().set((Property<String>) extension.call("getPackageName").get());
+			task.getContentType().set((Property<ContentType>) extension.call("getContentType").get());
 		});
 		project.getTasks().named("compileKotlin").configure(task -> task.dependsOn(jteModelsTask));
 	}
