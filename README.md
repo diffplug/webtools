@@ -2,6 +2,7 @@
 
 - [node](#node) - hassle-free `npm install` and `npm run blah`
 - [static server](#static-server) - a simple static file server
+- [jte](#jte) - creates idiomatic Kotlin model classes for `jte` templates (strict nullability & idiomatic collections and generics)
 
 ## Node
 
@@ -30,3 +31,38 @@ tasks.register('serve', com.diffplug.webtools.serve.StaticServerTask) {
   port = 8080 // by default
 }
 ```
+
+### JTE
+
+You have to apply `gg.jte.gradle` plugin yourself. We add a task called `jteModels` which creates a Kotlin model classes with strict nullability. Like so:
+
+```jte
+// header.jte
+@param String title
+@param String createdAtAndBy
+@param Long idToImpersonateNullable
+@param String loginLinkNullable
+```
+
+will turn into
+
+```kotlin
+class header(
+  val title: String,
+  val createdAtAndBy: String,
+  val idToImpersonateNullable: Long?,
+  val loginLinkNullable: String?,
+  ) : common.JteModel {
+
+  override fun render(engine: TemplateEngine, output: TemplateOutput) {
+    engine.render("pages/Admin/userShow/header.jte", mapOf(
+      "title" to title,
+      "createdAtAndBy" to createdAtAndBy,
+      "idToImpersonateNullable" to idToImpersonateNullable,
+      "loginLinkNullable" to loginLinkNullable,
+    ), output)
+  }
+}
+```
+
+We also translate Java collections and generics to their Kotlin equivalents. See `JteRenderer.convertJavaToKotlin` for details.

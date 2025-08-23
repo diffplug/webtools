@@ -12,7 +12,29 @@ apply from: 干.file('spotless/java.gradle')
 apply from: 干.file('base/maven.gradle')
 apply from: 干.file('base/sonatype.gradle')
 
+def NEEDS_GLUE = ['jte']
+for (glue in NEEDS_GLUE) {
+	sourceSets.register(glue) {
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+		java {}
+	}
+}
+jar {
+	for (glue in NEEDS_GLUE) {
+		from sourceSets.getByName(glue).output.classesDirs
+	}
+}
+
+spotless {
+	java {
+		target 'src/**/*.java'
+	}
+}
+
 dependencies {
+	// reflection for version decoupling
+	implementation 'org.jooq:joor:0.9.15'
 	// node.js
 	api 'com.github.eirslett:frontend-maven-plugin:1.15.1'
 	implementation 'com.diffplug.durian:durian-swt.os:5.0.1'
@@ -20,4 +42,9 @@ dependencies {
 	String VER_JETTY = '11.0.25'
 	api "org.eclipse.jetty:jetty-server:$VER_JETTY"
 	api "org.eclipse.jetty:jetty-servlet:$VER_JETTY"
+	// jte codegen
+	String VER_JTE = '3.2.1'
+	jteCompileOnly gradleApi()
+	jteCompileOnly "gg.jte:jte-runtime:${VER_JTE}"
+	jteCompileOnly "gg.jte:jte:${VER_JTE}"
 }
