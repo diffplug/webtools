@@ -3,6 +3,7 @@ package com.diffplug.webtools.flywayjooq;
 import com.diffplug.common.base.Either;
 import com.diffplug.common.base.Errors;
 import com.diffplug.common.base.Throwables;
+import com.diffplug.common.base.Throwing;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -18,7 +19,6 @@ import org.flywaydb.core.Flyway;
 import org.gradle.api.GradleException;
 import org.postgresql.ds.PGSimpleDataSource;
 import webtools.Env;
-import webtools.SetupCleanup;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +58,7 @@ public class SetupCleanupDockerFlyway implements Serializable {
 					return FileVisitResult.CONTINUE;
 				}
 			});
-			new Impl().start(keyFile(projectDir), this);
+			startImpl(keyFile(projectDir), this);
 		} catch (Exception e) {
 			var rootCause = Throwables.getRootCause(e);
 			if (rootCause != null && rootCause.getMessage() != null) {
@@ -70,8 +70,43 @@ public class SetupCleanupDockerFlyway implements Serializable {
 		}
 	}
 
+	private void startImpl(File keyFile, SetupCleanupDockerFlyway key) throws Exception {
+		synchronized (key.getClass()) {
+			byte[] required = toBytes(key);
+			if (keyFile.exists()) {
+				byte[] actual = java.nio.file.Files.readAllBytes(keyFile.toPath());
+				if (java.util.Arrays.equals(actual, required)) {
+					// short-circuit if our state is already setup
+					return;
+				} else {
+					java.nio.file.Files.delete(keyFile.toPath());
+					@SuppressWarnings("unchecked")
+					SetupCleanupDockerFlyway lastKey = (SetupCleanupDockerFlyway) fromBytes(required);
+					new Impl().doStop(lastKey);
+				}
+			}
+			// write out the key
+			new Impl().doStart(key);
+			java.nio.file.Files.createDirectories(keyFile.toPath().getParent());
+			java.nio.file.Files.write(keyFile.toPath(), required);
+		}
+	}
+
 	void forceStop(File projectDir) throws Exception {
-		new Impl().forceStop(keyFile(projectDir), this);
+		try {
+			new Impl().doStop(this);
+		} catch (Exception e) {
+			if (Throwables.getStackTraceAsString(e).contains("Connection refused")) {
+				// if we can't connect to docker, then we can't stop it
+				// so we'll just ignore the error
+			} else {
+				e.printStackTrace();
+			}
+		}
+		File kf = keyFile(projectDir);
+		if (kf.exists()) {
+			java.nio.file.Files.delete(kf.toPath());
+		}
 	}
 
 	PGSimpleDataSource getConnection() throws IOException {
@@ -105,6 +140,49 @@ public class SetupCleanupDockerFlyway implements Serializable {
 		return new File(projectDir, "build/docker");
 	}
 
+	private static final int TRY_SILENTLY_FOR = 10_000;
+	private static final int TRY_LOUDLY_UNTIL = 12_000;
+	private static final int WAIT_BETWEEN_TRIES = 100;
+
+	public static void keepTrying(Throwing.Runnable toAttempt) {
+		long start = System.currentTimeMillis();
+		while (true) {
+			try {
+				toAttempt.run();
+				return;
+			} catch (Throwable e) {
+				long elapsed = System.currentTimeMillis() - start;
+				if (elapsed < TRY_SILENTLY_FOR) {
+					Errors.rethrow().run(() -> Thread.sleep(WAIT_BETWEEN_TRIES));
+				} else if (elapsed < TRY_LOUDLY_UNTIL) {
+					e.printStackTrace();
+					Errors.rethrow().run(() -> Thread.sleep(WAIT_BETWEEN_TRIES));
+				} else {
+					throw Errors.asRuntime(e);
+				}
+			}
+		}
+	}
+
+	private static byte[] toBytes(Object key) {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		try (ObjectOutputStream objectOutput = new ObjectOutputStream(bytes)) {
+			objectOutput.writeObject(key);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return bytes.toByteArray();
+	}
+
+	private static Object fromBytes(byte[] raw) throws ClassNotFoundException {
+		ByteArrayInputStream bytes = new ByteArrayInputStream(raw);
+		try (ObjectInputStream objectOutput = new ObjectInputStream(bytes)) {
+			return objectOutput.readObject();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	DockerComposeRule rule() {
 		return DockerComposeRule.builder()
 				.file(dockerComposeFile.getAbsolutePath())
@@ -117,8 +195,7 @@ public class SetupCleanupDockerFlyway implements Serializable {
 				.build();
 	}
 
-	private static class Impl extends SetupCleanup<SetupCleanupDockerFlyway> {
-		@Override
+	private static class Impl {
 		protected void doStart(SetupCleanupDockerFlyway key) throws IOException, InterruptedException {
 			DockerComposeRule rule;
 			String ip;
@@ -145,7 +222,7 @@ public class SetupCleanupDockerFlyway implements Serializable {
 
 			// run flyway
 			PGSimpleDataSource postgres = key.getConnection();
-			SetupCleanup.keepTrying(() -> {
+			keepTrying(() -> {
 				Flyway.configure()
 					.dataSource(postgres)
 					.locations("filesystem:" + key.flywayMigrations.getAbsolutePath())
@@ -178,7 +255,6 @@ public class SetupCleanupDockerFlyway implements Serializable {
 			Files.write(schema, key.flywaySchemaDump, StandardCharsets.UTF_8);
 		}
 
-		@Override
 		protected void doStop(SetupCleanupDockerFlyway key) throws IOException, InterruptedException {
 			if (!Env.isGitHubAction()) {
 				DockerCompose compose = key.rule().dockerCompose();
