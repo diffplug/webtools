@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+### Added
+- `com.diffplug.webtools.jte` plugin ([#10](https://github.com/diffplug/webtools/pull/10))
 
 ## [1.2.6] - 2025-08-22
 ### Fixed
