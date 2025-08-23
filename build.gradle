@@ -47,4 +47,22 @@ dependencies {
 	jteCompileOnly gradleApi()
 	jteCompileOnly "gg.jte:jte-runtime:${VER_JTE}"
 	jteCompileOnly "gg.jte:jte:${VER_JTE}"
+	// flyway and jooq
+	String VER_FLYWAY='11.11.1'
+	String VER_JOOQ='3.20.6'
+	String VER_PALANTIR_DOCKER_COMPOSE='2.3.0'
+	String VER_POSTGRESQL_DRIVER='42.7.7'
+	// https://github.com/palantir/docker-compose-rule
+	api "com.palantir.docker.compose:docker-compose-rule-core:${VER_PALANTIR_DOCKER_COMPOSE}"
+	api "com.palantir.docker.compose:docker-compose-rule-junit4:${VER_PALANTIR_DOCKER_COMPOSE}"
+	// https://jdbc.postgresql.org/documentation/changelog.html
+	implementation "org.postgresql:postgresql:${VER_POSTGRESQL_DRIVER}"
+	// jooq codegen
+	api "org.jooq:jooq-codegen:${VER_JOOQ}"
+	api "org.jooq.jooq-codegen-gradle:org.jooq.jooq-codegen-gradle.gradle.plugin:${VER_JOOQ}"
+	// db migration
+	api "org.flywaydb:flyway-core:${VER_FLYWAY}"
+	api "org.flywaydb:flyway-database-postgresql:${VER_FLYWAY}"
+	// java8 utilities
+	implementation 'com.diffplug.durian:durian-core:1.2.0'
 }
