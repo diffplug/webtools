@@ -32,6 +32,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.work.DisableCachingByDefault;
+import webtools.Env;
 
 /**
  * Installs a specific version of node.js and npm,
@@ -48,6 +49,14 @@ public class NodePlugin implements Plugin<Project> {
 		public Extension(Project project) {
 			this.project = Objects.requireNonNull(project);
 		}
+
+        public boolean envIsHerokuBuild() {
+            return Env.isHerokuBuild();
+        }
+
+        public boolean envIsGitHubAction() {
+            return Env.isGitHubAction();
+        }
 
 		public TaskProvider<?> npm_run(String name, Action<NpmRunTask> taskConfig) {
 			return project.getTasks().register("npm_run_" + name.replace(':', '-'), NpmRunTask.class, task -> {

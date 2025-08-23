@@ -16,6 +16,7 @@
 package com.diffplug.webtools.node;
 
 import com.diffplug.common.swt.os.OS;
+import com.diffplug.webtools.SetupCleanup;
 import com.github.eirslett.maven.plugins.frontend.lib.FrontendPluginFactory;
 import com.github.eirslett.maven.plugins.frontend.lib.InstallationException;
 import com.github.eirslett.maven.plugins.frontend.lib.ProxyConfig;

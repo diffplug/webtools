@@ -19,7 +19,7 @@ import com.diffplug.common.base.Either;
 import com.diffplug.common.base.Errors;
 import com.diffplug.common.base.Throwables;
 import com.diffplug.common.base.Throwing;
-import com.diffplug.webtools.node.SetupCleanup;
+import com.diffplug.webtools.SetupCleanup;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
