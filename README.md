@@ -3,6 +3,7 @@
 - [node](#node) - hassle-free `npm install` and `npm run blah`
 - [static server](#static-server) - a simple static file server
 - [jte](#jte) - creates idiomatic Kotlin model classes for `jte` templates (strict nullability & idiomatic collections and generics)
+- [flywayjooq](#flywayjooq) - coordinates docker, flyway, and jOOQ for fast testing 
 
 ## Node
 
@@ -66,3 +67,24 @@ class header(
 ```
 
 We also translate Java collections and generics to their Kotlin equivalents. See `JteRenderer.convertJavaToKotlin` for details.
+
+### flywayjooq
+
+Compile tasks just need to depend on the `jooq` task. It will keep a live database running to test against.
+
+```gradle
+flywayJooq {
+	// starts this docker container which needs to have postgres
+	setup.dockerComposeFile = file('src/test/resources/docker-compose.yml')
+	// writes out connection data to this file
+	setup.dockerConnectionParams = file('build/pgConnection.properties')
+	// migrates a template database to this
+	setup.flywayMigrations = file('src/main/resources/db/migration')
+	// dumps the final schema out to this
+	setup.flywaySchemaDump = file('src/test/resources/schema.sql')
+	// sets up jOOQ
+	configuration {
+		// jOOQ setup same as the official jOOQ plugin
+	}
+}
+```

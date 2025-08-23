@@ -4,6 +4,7 @@
 ### Added
 - `webtools.Env.isHerokuBuild()` and `isGitHubAction()`
 - `com.diffplug.webtools.jte` plugin ([#10](https://github.com/diffplug/webtools/pull/10))
+- `com.diffplug.webtools.flywayjooq` plugin ([#11](https://github.com/diffplug/webtools/pull/11))
 
 ## [1.2.6] - 2025-08-22
 ### Fixed
