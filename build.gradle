@@ -12,6 +12,10 @@ apply from: 干.file('spotless/java.gradle')
 apply from: 干.file('base/maven.gradle')
 apply from: 干.file('base/sonatype.gradle')
 
+repositories {
+	mavenCentral()
+	gradlePluginPortal()
+}
 dependencies {
 	// node.js
 	api 'com.github.eirslett:frontend-maven-plugin:1.15.1'
@@ -20,4 +24,9 @@ dependencies {
 	String VER_JETTY = '11.0.25'
 	api "org.eclipse.jetty:jetty-server:$VER_JETTY"
 	api "org.eclipse.jetty:jetty-servlet:$VER_JETTY"
+	// jte codegen
+	String VER_JTE = '3.2.1'
+	api "gg.jte:jte-gradle-plugin:${VER_JTE}"
+	implementation "gg.jte:jte-runtime:${VER_JTE}"
+	implementation "gg.jte:jte:${VER_JTE}"
 }
