@@ -1,7 +1,6 @@
 plugins {
 	id 'com.diffplug.blowdryer'
 	id 'com.diffplug.spotless-changelog'
-	//    id 'io.github.davidburstrom.version-compatibility' version '0.5.0' // https://github.com/davidburstrom/version-compatibility-gradle-plugin?tab=readme-ov-file#releases
 }
 
 apply from: 干.file('base/java.gradle')
@@ -49,4 +48,3 @@ dependencies {
 	jteCompileOnly "gg.jte:jte-runtime:${VER_JTE}"
 	jteCompileOnly "gg.jte:jte:${VER_JTE}"
 }
-
