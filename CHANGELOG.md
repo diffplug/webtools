@@ -1,6 +1,8 @@
 # Webtools releases
 
 ## [Unreleased]
+
+## [1.3.0] - 2025-08-23
 ### Added
 - `webtools.Env.isHerokuBuild()` and `isGitHubAction()`
 - `com.diffplug.webtools.jte` plugin ([#10](https://github.com/diffplug/webtools/pull/10))
