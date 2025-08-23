@@ -19,6 +19,7 @@ import org.flywaydb.core.Flyway;
 import org.gradle.api.GradleException;
 import org.postgresql.ds.PGSimpleDataSource;
 import webtools.Env;
+import com.diffplug.webtools.node.SetupCleanup;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +59,7 @@ public class SetupCleanupDockerFlyway implements Serializable {
 					return FileVisitResult.CONTINUE;
 				}
 			});
-			startImpl(keyFile(projectDir), this);
+			new Impl().start(keyFile(projectDir), this);
 		} catch (Exception e) {
 			var rootCause = Throwables.getRootCause(e);
 			if (rootCause != null && rootCause.getMessage() != null) {
@@ -70,27 +71,6 @@ public class SetupCleanupDockerFlyway implements Serializable {
 		}
 	}
 
-	private void startImpl(File keyFile, SetupCleanupDockerFlyway key) throws Exception {
-		synchronized (key.getClass()) {
-			byte[] required = toBytes(key);
-			if (keyFile.exists()) {
-				byte[] actual = java.nio.file.Files.readAllBytes(keyFile.toPath());
-				if (java.util.Arrays.equals(actual, required)) {
-					// short-circuit if our state is already setup
-					return;
-				} else {
-					java.nio.file.Files.delete(keyFile.toPath());
-					@SuppressWarnings("unchecked")
-					SetupCleanupDockerFlyway lastKey = (SetupCleanupDockerFlyway) fromBytes(required);
-					new Impl().doStop(lastKey);
-				}
-			}
-			// write out the key
-			new Impl().doStart(key);
-			java.nio.file.Files.createDirectories(keyFile.toPath().getParent());
-			java.nio.file.Files.write(keyFile.toPath(), required);
-		}
-	}
 
 	void forceStop(File projectDir) throws Exception {
 		try {
@@ -164,24 +144,6 @@ public class SetupCleanupDockerFlyway implements Serializable {
 		}
 	}
 
-	private static byte[] toBytes(Object key) {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		try (ObjectOutputStream objectOutput = new ObjectOutputStream(bytes)) {
-			objectOutput.writeObject(key);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return bytes.toByteArray();
-	}
-
-	private static Object fromBytes(byte[] raw) throws ClassNotFoundException {
-		ByteArrayInputStream bytes = new ByteArrayInputStream(raw);
-		try (ObjectInputStream objectOutput = new ObjectInputStream(bytes)) {
-			return objectOutput.readObject();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 	DockerComposeRule rule() {
 		return DockerComposeRule.builder()
@@ -195,7 +157,8 @@ public class SetupCleanupDockerFlyway implements Serializable {
 				.build();
 	}
 
-	private static class Impl {
+	private static class Impl extends SetupCleanup<SetupCleanupDockerFlyway> {
+		@Override
 		protected void doStart(SetupCleanupDockerFlyway key) throws IOException, InterruptedException {
 			DockerComposeRule rule;
 			String ip;
@@ -255,6 +218,7 @@ public class SetupCleanupDockerFlyway implements Serializable {
 			Files.write(schema, key.flywaySchemaDump, StandardCharsets.UTF_8);
 		}
 
+		@Override
 		protected void doStop(SetupCleanupDockerFlyway key) throws IOException, InterruptedException {
 			if (!Env.isGitHubAction()) {
 				DockerCompose compose = key.rule().dockerCompose();

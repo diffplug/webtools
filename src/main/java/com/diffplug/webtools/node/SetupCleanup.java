@@ -24,7 +24,7 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
 
-abstract class SetupCleanup<K> {
+public abstract class SetupCleanup<K> {
 	public void start(File keyFile, K key) throws Exception {
 		synchronized (key.getClass()) {
 			byte[] required = toBytes(key);
