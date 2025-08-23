@@ -17,6 +17,8 @@ repositories {
 	gradlePluginPortal()
 }
 dependencies {
+	// reflection for version decoupling
+	implementation 'org.jooq:joor:0.9.15'
 	// node.js
 	api 'com.github.eirslett:frontend-maven-plugin:1.15.1'
 	implementation 'com.diffplug.durian:durian-swt.os:5.0.1'

@@ -15,13 +15,13 @@
  */
 package com.diffplug.webtools.jte;
 
+import static org.joor.Reflect.onClass;
+
 import gg.jte.ContentType;
 import gg.jte.TemplateConfig;
 import gg.jte.compiler.TemplateParser;
 import gg.jte.compiler.TemplateParserVisitorAdapter;
 import gg.jte.compiler.TemplateType;
-import gg.jte.gradle.JteExtension;
-import gg.jte.gradle.JteGradle;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -49,11 +49,9 @@ import org.gradle.work.InputChanges;
 public class JtePlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
-		project.getPlugins().apply(JteGradle.class);
+		project.getPlugins().apply("gg.jte.gradle");
 		project.getPlugins().apply("org.jetbrains.kotlin.jvm");
-		var extension = project.getExtensions().getByType(JteExtension.class);
-		extension.getBinaryStaticContent().set(true);
-		extension.precompile();
+		gg.jte.gradle.JteExtension extension = (gg.jte.gradle.JteExtension) project.getExtensions().getByType(onClass("gg.jte.gradle.JteExtension").type());
 
 		JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
 		SourceSet main = javaPluginExtension.getSourceSets().findByName("main");
