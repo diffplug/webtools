@@ -1,7 +1,24 @@
+/*
+ * Copyright (C) 2025 DiffPlug
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.diffplug.webtools.flywayjooq;
 
 import com.diffplug.common.base.Preconditions;
 import com.diffplug.common.base.Throwables;
+import java.io.File;
+import java.net.ConnectException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.DirectoryProperty;
@@ -10,9 +27,6 @@ import org.jooq.codegen.GenerationTool;
 import org.jooq.meta.jaxb.Configuration;
 import org.jooq.meta.jaxb.Generator;
 import org.jooq.meta.jaxb.Logging;
-
-import java.io.File;
-import java.net.ConnectException;
 
 @CacheableTask
 public abstract class JooqTask extends DefaultTask {
@@ -59,4 +73,3 @@ public abstract class JooqTask extends DefaultTask {
 		}
 	}
 }
-

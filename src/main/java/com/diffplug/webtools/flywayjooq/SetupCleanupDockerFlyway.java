@@ -1,9 +1,25 @@
+/*
+ * Copyright (C) 2025 DiffPlug
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.diffplug.webtools.flywayjooq;
 
 import com.diffplug.common.base.Either;
 import com.diffplug.common.base.Errors;
 import com.diffplug.common.base.Throwables;
 import com.diffplug.common.base.Throwing;
+import com.diffplug.webtools.node.SetupCleanup;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -15,12 +31,6 @@ import com.palantir.docker.compose.connection.waiting.HealthChecks;
 import com.palantir.docker.compose.execution.DockerCompose;
 import com.palantir.docker.compose.execution.DockerComposeExecArgument;
 import com.palantir.docker.compose.execution.DockerComposeExecOption;
-import org.flywaydb.core.Flyway;
-import org.gradle.api.GradleException;
-import org.postgresql.ds.PGSimpleDataSource;
-import webtools.Env;
-import com.diffplug.webtools.node.SetupCleanup;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
@@ -29,6 +39,10 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import org.flywaydb.core.Flyway;
+import org.gradle.api.GradleException;
+import org.postgresql.ds.PGSimpleDataSource;
+import webtools.Env;
 
 public class SetupCleanupDockerFlyway implements Serializable {
 	private static final long serialVersionUID = -8606504827780656288L;
@@ -71,7 +85,6 @@ public class SetupCleanupDockerFlyway implements Serializable {
 		}
 	}
 
-
 	void forceStop(File projectDir) throws Exception {
 		try {
 			new Impl().doStop(this);
@@ -107,8 +120,8 @@ public class SetupCleanupDockerFlyway implements Serializable {
 			port = Integer.parseInt(connectionProps.getProperty("port"));
 		}
 		PGSimpleDataSource dataSource = new PGSimpleDataSource();
-		dataSource.setServerNames(new String[] {ip});
-		dataSource.setPortNumbers(new int[] {port});
+		dataSource.setServerNames(new String[]{ip});
+		dataSource.setPortNumbers(new int[]{port});
 		dataSource.setUser("root");
 		dataSource.setPassword("password");
 		dataSource.setDatabaseName("template1");
@@ -143,7 +156,6 @@ public class SetupCleanupDockerFlyway implements Serializable {
 			}
 		}
 	}
-
 
 	DockerComposeRule rule() {
 		return DockerComposeRule.builder()
@@ -187,19 +199,19 @@ public class SetupCleanupDockerFlyway implements Serializable {
 			PGSimpleDataSource postgres = key.getConnection();
 			keepTrying(() -> {
 				Flyway.configure()
-					.dataSource(postgres)
-					.locations("filesystem:" + key.flywayMigrations.getAbsolutePath())
-					.schemas("public")
-					.load()
-					.migrate();
+						.dataSource(postgres)
+						.locations("filesystem:" + key.flywayMigrations.getAbsolutePath())
+						.schemas("public")
+						.load()
+						.migrate();
 			});
 
 			// write out the schema to disk
 			String schema;
 			List<String> pg_dump_args = Arrays.asList("-d", "template1", "-U", postgres.getUser(), "--schema-only", "--restrict-key=reproduciblediff");
 			if (rule == null) {
-				Process process = Runtime.getRuntime().exec(ImmutableList.<String>builder().add(
-						"pg_dump", 
+				Process process = Runtime.getRuntime().exec(ImmutableList.<String> builder().add(
+						"pg_dump",
 						"-h", GITHUB_IP, "-p", Integer.toString(GITHUB_PORT))
 						.addAll(pg_dump_args).build().toArray(new String[0]));
 				// swallow errors (not great...)
@@ -212,7 +224,7 @@ public class SetupCleanupDockerFlyway implements Serializable {
 				schema = rule.dockerCompose().exec(DockerComposeExecOption.noOptions(),
 						"postgres", DockerComposeExecArgument.arguments(ImmutableList.builder().add("pg_dump")
 								.addAll(pg_dump_args)
-						.build().toArray(new String[0])));
+								.build().toArray(new String[0])));
 			}
 			Files.createParentDirs(key.flywaySchemaDump);
 			Files.write(schema, key.flywaySchemaDump, StandardCharsets.UTF_8);

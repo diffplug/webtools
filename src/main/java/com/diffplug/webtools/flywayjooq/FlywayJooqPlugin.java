@@ -1,5 +1,25 @@
+/*
+ * Copyright (C) 2025 DiffPlug
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.diffplug.webtools.flywayjooq;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -16,12 +36,6 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskProvider;
 import org.jooq.codegen.gradle.CodegenPluginExtension;
 
-import javax.inject.Inject;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * This plugin spools up a fresh postgres session,
  * runs flyway on it, then runs jooq on the result.
@@ -34,9 +48,8 @@ public class FlywayJooqPlugin implements Plugin<Project> {
 	public static class Extension extends CodegenPluginExtension {
 		@Inject
 		public Extension(
-			ObjectFactory objects,
-			ProjectLayout layout
-		) {
+				ObjectFactory objects,
+				ProjectLayout layout) {
 			super(objects, layout);
 		}
 
@@ -130,7 +143,6 @@ public class FlywayJooqPlugin implements Plugin<Project> {
 			getSetupCleanup().get().forceStop(getProjectDir().get().getAsFile());
 		}
 	}
-
 
 	/** Detects the jooq version. */
 	private static String detectJooqVersion() {
